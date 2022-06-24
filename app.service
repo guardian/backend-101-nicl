@@ -1,0 +1,8 @@
+[Unit]
+Description=Backend 101 app
+
+[Service]
+ExecStart=java -jar /hello-world.jar
+
+[Install]
+WantedBy=multi-user.target

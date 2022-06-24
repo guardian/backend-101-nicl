@@ -1,0 +1,733 @@
+{
+ "Parameters": {
+  "VpcId": {
+   "Type": "AWS::SSM::Parameter::Value<AWS::EC2::VPC::Id>",
+   "Default": "/account/vpc/primary/id",
+   "Description": "Virtual Private Cloud to run EC2 instances within. Should NOT be the account default VPC."
+  },
+  "backend101niclPrivateSubnets": {
+   "Type": "AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>",
+   "Default": "/account/vpc/primary/subnets/private",
+   "Description": "A list of private subnets"
+  },
+  "LoggingStreamName": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/account/services/logging.stream.name",
+   "Description": "SSM parameter containing the Name (not ARN) on the kinesis stream"
+  },
+  "DistributionBucketName": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/account/services/artifact.bucket",
+   "Description": "SSM parameter containing the S3 bucket name holding distribution artifacts"
+  },
+  "AMIBackend101nicl": {
+   "Type": "AWS::EC2::Image::Id",
+   "Description": "Amazon Machine Image ID for the app backend-101-nicl. Use this in conjunction with AMIgo to keep AMIs up to date."
+  },
+  "backend101niclPublicSubnets": {
+   "Type": "AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>",
+   "Default": "/account/vpc/primary/subnets/public",
+   "Description": "A list of public subnets"
+  }
+ },
+ "Resources": {
+  "CertificateBackend101nicl37CCCF1C": {
+   "Type": "AWS::CertificateManager::Certificate",
+   "Properties": {
+    "DomainName": "backend-101-nicl.gutools.co.uk",
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "ValidationMethod": "DNS"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain"
+  },
+  "InstanceRoleBackend101niclD4DB2E69": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "ec2.",
+           {
+            "Ref": "AWS::URLSuffix"
+           }
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Path": "/",
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ]
+   }
+  },
+  "SSMRunCommandPolicy244E1613": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ec2messages:AcknowledgeMessage",
+        "ec2messages:DeleteMessage",
+        "ec2messages:FailMessage",
+        "ec2messages:GetEndpoint",
+        "ec2messages:GetMessages",
+        "ec2messages:SendReply",
+        "ssm:UpdateInstanceInformation",
+        "ssm:ListInstanceAssociations",
+        "ssm:DescribeInstanceProperties",
+        "ssm:DescribeDocumentParameters",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ssm-run-command-policy",
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "DescribeEC2PolicyFF5F9295": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "autoscaling:DescribeAutoScalingInstances",
+        "autoscaling:DescribeAutoScalingGroups",
+        "ec2:DescribeTags",
+        "ec2:DescribeInstances"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "describe-ec2-policy",
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "GuLogShippingPolicy981BFE5A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "kinesis:Describe*",
+        "kinesis:Put*"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:kinesis:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":stream/",
+          {
+           "Ref": "LoggingStreamName"
+          }
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GuLogShippingPolicy981BFE5A",
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "GetDistributablePolicyBackend101nicl064F77C5": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "DistributionBucketName"
+          },
+          "/deploy/CODE/backend-101-nicl/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GetDistributablePolicyBackend101nicl064F77C5",
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "ParameterStoreReadBackend101niclD223D580": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "ssm:GetParametersByPath",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:ssm:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":parameter/CODE/deploy/backend-101-nicl"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ssm:GetParameters",
+        "ssm:GetParameter"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:ssm:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":parameter/CODE/deploy/backend-101-nicl/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "parameter-store-read-policy",
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "GuHttpsEgressSecurityGroupBackend101niclFC81895F": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Allow all outbound HTTPS traffic",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound HTTPS traffic",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "VpcId": {
+     "Ref": "VpcId"
+    }
+   }
+  },
+  "GuHttpsEgressSecurityGroupBackend101niclfrombackend101niclLoadBalancerBackend101niclSecurityGroupE6DAEC218001F90BCE13": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "IpProtocol": "tcp",
+    "Description": "Load balancer to target",
+    "FromPort": 8001,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "GuHttpsEgressSecurityGroupBackend101niclFC81895F",
+      "GroupId"
+     ]
+    },
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "LoadBalancerBackend101niclSecurityGroup4A83CCDB",
+      "GroupId"
+     ]
+    },
+    "ToPort": 8001
+   }
+  },
+  "AutoScalingGroupBackend101niclInstanceProfile2C1802FF": {
+   "Type": "AWS::IAM::InstanceProfile",
+   "Properties": {
+    "Roles": [
+     {
+      "Ref": "InstanceRoleBackend101niclD4DB2E69"
+     }
+    ]
+   }
+  },
+  "AutoScalingGroupBackend101niclLaunchConfigF7E80655": {
+   "Type": "AWS::AutoScaling::LaunchConfiguration",
+   "Properties": {
+    "ImageId": {
+     "Ref": "AMIBackend101nicl"
+    },
+    "InstanceType": "t4g.small",
+    "IamInstanceProfile": {
+     "Ref": "AutoScalingGroupBackend101niclInstanceProfile2C1802FF"
+    },
+    "MetadataOptions": {
+     "HttpTokens": "required"
+    },
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "GuHttpsEgressSecurityGroupBackend101niclFC81895F",
+       "GroupId"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "WazuhSecurityGroup",
+       "GroupId"
+      ]
+     }
+    ],
+    "UserData": {
+     "Fn::Base64": "# executes on startup\naws s3 cp s3://deploy-tools-dist/deploy/CODE/backend-101-nicl.service /etc/systemd/system/backend-101-nicl.service\naws s3 cp s3://deploy-tools-dist/deploy/CODE/hello-world.jar /hello-world.jar\nsystemctl start backend-101-nicl\n"
+    }
+   },
+   "DependsOn": [
+    "InstanceRoleBackend101niclD4DB2E69"
+   ]
+  },
+  "AutoScalingGroupBackend101niclASG08CFE11B": {
+   "Type": "AWS::AutoScaling::AutoScalingGroup",
+   "Properties": {
+    "MaxSize": "2",
+    "MinSize": "1",
+    "HealthCheckGracePeriod": 120,
+    "HealthCheckType": "ELB",
+    "LaunchConfigurationName": {
+     "Ref": "AutoScalingGroupBackend101niclLaunchConfigF7E80655"
+    },
+    "Tags": [
+     {
+      "Key": "App",
+      "PropagateAtLaunch": true,
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:pattern-name",
+      "PropagateAtLaunch": true,
+      "Value": "GuEc2App"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "PropagateAtLaunch": true,
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "PropagateAtLaunch": true,
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "LogKinesisStreamName",
+      "PropagateAtLaunch": true,
+      "Value": {
+       "Ref": "LoggingStreamName"
+      }
+     },
+     {
+      "Key": "Name",
+      "PropagateAtLaunch": true,
+      "Value": "backend-101-nicl/AutoScalingGroupBackend101nicl"
+     },
+     {
+      "Key": "Stack",
+      "PropagateAtLaunch": true,
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "PropagateAtLaunch": true,
+      "Value": "CODE"
+     }
+    ],
+    "TargetGroupARNs": [
+     {
+      "Ref": "TargetGroupBackend101niclB0F12102"
+     }
+    ],
+    "VPCZoneIdentifier": {
+     "Ref": "backend101niclPrivateSubnets"
+    }
+   }
+  },
+  "WazuhSecurityGroup": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Allow outbound traffic from wazuh agent to manager",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Wazuh event logging",
+      "FromPort": 1514,
+      "IpProtocol": "tcp",
+      "ToPort": 1514
+     },
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Wazuh agent registration",
+      "FromPort": 1515,
+      "IpProtocol": "tcp",
+      "ToPort": 1515
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "VpcId": {
+     "Ref": "VpcId"
+    }
+   }
+  },
+  "LoadBalancerBackend101nicl8DA158B3": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "true"
+     }
+    ],
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "LoadBalancerBackend101niclSecurityGroup4A83CCDB",
+       "GroupId"
+      ]
+     }
+    ],
+    "Subnets": {
+     "Ref": "backend101niclPublicSubnets"
+    },
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "Type": "application"
+   }
+  },
+  "LoadBalancerBackend101niclSecurityGroup4A83CCDB": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Automatically created Security Group for ELB backend101niclLoadBalancerBackend101nicl50D86926",
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow from anyone on port 443",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "VpcId": {
+     "Ref": "VpcId"
+    }
+   }
+  },
+  "LoadBalancerBackend101niclSecurityGrouptobackend101niclGuHttpsEgressSecurityGroupBackend101nicl6DFA7307800101469825": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "GroupId": {
+     "Fn::GetAtt": [
+      "LoadBalancerBackend101niclSecurityGroup4A83CCDB",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "Description": "Load balancer to target",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "GuHttpsEgressSecurityGroupBackend101niclFC81895F",
+      "GroupId"
+     ]
+    },
+    "FromPort": 8001,
+    "ToPort": 8001
+   }
+  },
+  "TargetGroupBackend101niclB0F12102": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 10,
+    "HealthCheckPath": "/healthcheck",
+    "HealthCheckProtocol": "HTTP",
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 5,
+    "Port": 8001,
+    "Protocol": "HTTP",
+    "Tags": [
+     {
+      "Key": "App",
+      "Value": "backend-101-nicl"
+     },
+     {
+      "Key": "gu:cdk:version",
+      "Value": "45.1.3"
+     },
+     {
+      "Key": "gu:repo",
+      "Value": "guardian/backend-101-nicl"
+     },
+     {
+      "Key": "Stack",
+      "Value": "deploy"
+     },
+     {
+      "Key": "Stage",
+      "Value": "CODE"
+     }
+    ],
+    "TargetGroupAttributes": [
+     {
+      "Key": "deregistration_delay.timeout_seconds",
+      "Value": "30"
+     },
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "instance",
+    "UnhealthyThresholdCount": 2,
+    "VpcId": {
+     "Ref": "VpcId"
+    }
+   }
+  },
+  "ListenerBackend101nicl688D063F": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "TargetGroupBackend101niclB0F12102"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "LoadBalancerBackend101nicl8DA158B3"
+    },
+    "Certificates": [
+     {
+      "CertificateArn": {
+       "Ref": "CertificateBackend101nicl37CCCF1C"
+      }
+     }
+    ],
+    "Port": 443,
+    "Protocol": "HTTPS"
+   }
+  },
+  "dns": {
+   "Type": "Guardian::DNS::RecordSet",
+   "Properties": {
+    "Name": "backend-101-nicl.gutools.co.uk",
+    "ResourceRecords": [
+     {
+      "Fn::GetAtt": [
+       "LoadBalancerBackend101nicl8DA158B3",
+       "DNSName"
+      ]
+     }
+    ],
+    "RecordType": "CNAME",
+    "TTL": 60,
+    "Stage": "CODE"
+   }
+  }
+ },
+ "Outputs": {
+  "LoadBalancerBackend101niclDnsName": {
+   "Description": "DNS entry for LoadBalancerBackend101nicl",
+   "Value": {
+    "Fn::GetAtt": [
+     "LoadBalancerBackend101nicl8DA158B3",
+     "DNSName"
+    ]
+   }
+  }
+ }
+}

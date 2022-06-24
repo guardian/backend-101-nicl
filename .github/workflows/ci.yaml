@@ -13,7 +13,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
@@ -22,9 +22,18 @@ jobs:
         with:
           java-version: "11"
           distribution: "corretto"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
       - name: test and check formatting
         run: |
           sbt -v test scalafmtCheckAll
       - name: build uberjar
         run: |
           sbt -v assembly
+      - name: cdk synth
+        run: |
+          cd cdk
+          npx projen dependencies
+          npx projen synth
