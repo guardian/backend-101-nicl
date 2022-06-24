@@ -12,6 +12,8 @@ object Hello {
       "/",
       new HttpHandler {
         def handle(httpExchange: HttpExchange): Unit = {
+          println("GET / received.")
+
           val response = "Hello, World!"
           httpExchange.sendResponseHeaders(200, response.length)
           val out = httpExchange.getResponseBody()
