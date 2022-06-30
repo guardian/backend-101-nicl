@@ -51,10 +51,11 @@ jobs:
             deployments:
               cloudformation:
                 type: cloud-formation
-                app: amigo
+                app: backend-101-nicl
                 sources:
                   - cdk/cdk.out/backend-101-nicl.template.json
                 parameters:
+                  cloudFormationStackName: deploy-backend-101-nicl-CODE
                   amiTags:
                     Recipe: backend-101
                     AmigoStage: PROD
