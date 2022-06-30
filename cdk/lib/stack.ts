@@ -13,12 +13,12 @@ export class MyStack extends GuStack {
 		const name = "backend-101-nicl";
 		const domainName = `${name}.gutools.co.uk`;
 		const bucket = "deploy-tools-dist";
-		const keyPrefix = `${this.stack}/${this.stage}`;
+		const keyPrefix = `${this.stack}/${this.stage}/${name}`;
 
 		// In a 'real' example, we would want to use a non-root user etc. But
 		// this is enough for now.
 		const userData = `# executes on startup
-aws s3 cp s3://${bucket}/${keyPrefix}/${name}.service /etc/systemd/system/${name}.service
+aws s3 cp s3://${bucket}/${keyPrefix}/app.service /etc/systemd/system/${name}.service
 aws s3 cp s3://${bucket}/${keyPrefix}/hello-world.jar /hello-world.jar
 systemctl start ${name}
 `;
