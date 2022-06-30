@@ -17,7 +17,7 @@ export class MyStack extends GuStack {
 
 		// In a 'real' example, we would want to use a non-root user etc. But
 		// this is enough for now.
-		const userData = `# executes on startup
+		const userData = `#!/bin/bash -ev
 aws s3 cp s3://${bucket}/${keyPrefix}/app.service /etc/systemd/system/${name}.service
 aws s3 cp s3://${bucket}/${keyPrefix}/hello-world.jar /hello-world.jar
 systemctl start ${name}
