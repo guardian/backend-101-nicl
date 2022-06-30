@@ -60,7 +60,7 @@ jobs:
                     Recipe: backend-101
                     AmigoStage: PROD
                   templatePath: backend-101-nicl.template.json
-              autoscaling:
+              backend-101-nicl:
                 type: autoscaling
                 sources:
                   - target/scala-2.13/hello-world.jar
