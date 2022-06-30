@@ -37,3 +37,33 @@ jobs:
           cd cdk
           npx projen dependencies
           npx projen synth
+
+      - uses: guardian/actions-riff-raff@v1
+        with:
+          app: backend-101-nicl
+          config: |
+            stacks:
+              - deploy
+            regions:
+              - eu-west-1
+            allowedStages:
+              - CODE
+            deployments:
+              cloudformation:
+                type: cloud-formation
+                app: amigo
+                sources:
+                  - cdk/cdk.out/backend-101-nicl.template.json
+                parameters:
+                  amiTags:
+                    Recipe: backend-101
+                    AmigoStage: PROD
+                  templatePath: backend-101-nicl.template.json
+              autoscaling:
+                type: autoscaling
+                sources:
+                  - target/scala-2.13/hello-world.jar
+                parameters:
+                  bucket: deploy-tools-dist
+                dependencies:
+                  - cloudformation
