@@ -55,7 +55,7 @@ jobs:
                 sources:
                   - cdk/cdk.out/backend-101-nicl.template.json
                 parameters:
-                  cloudFormationStackName: deploy-backend-101-nicl-CODE
+                  amiParameter: AMIBackend101nicl
                   amiTags:
                     Recipe: backend-101
                     AmigoStage: PROD
