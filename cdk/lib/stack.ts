@@ -15,6 +15,8 @@ export class MyStack extends GuStack {
 		const bucket = "deploy-tools-dist";
 		const keyPrefix = `${this.stack}/${this.stage}`;
 
+		// In a 'real' example, we would want to use a non-root user etc. But
+		// this is enough for now.
 		const userData = `# executes on startup
 aws s3 cp s3://${bucket}/${keyPrefix}/${name}.service /etc/systemd/system/${name}.service
 aws s3 cp s3://${bucket}/${keyPrefix}/hello-world.jar /hello-world.jar

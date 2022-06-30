@@ -1,3 +1,3 @@
-# Scala starter kit for the Backend 101 guide
+# Example Backend 101 repository
 
 _Not intended for actual production use._
