@@ -24,16 +24,16 @@ systemctl start ${name}
 `;
 
 		const app = new GuEc2App(this, {
-			applicationPort: 8001,
+			applicationPort: 9000,
 			app: name,
-			access: { scope: AccessScope.PUBLIC},
+			access: { scope: AccessScope.PUBLIC },
 			instanceType: InstanceType.of(InstanceClass.T4G, InstanceSize.SMALL),
 			monitoringConfiguration: { noMonitoring: true},
 			scaling: { minimumInstances: 1, maximumInstances: 2},
 			userData: userData,
 			certificateProps: {
 				domainName,
-			}
+			},
 		});
 
 		new GuCname(this, "dns", {

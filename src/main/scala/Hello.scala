@@ -6,7 +6,7 @@ import java.net.InetSocketAddress
 object Hello {
   def main(args: Array[String]): Unit = {
     val server =
-      HttpServer.create(new InetSocketAddress("localhost", 8001), 0)
+      HttpServer.create(new InetSocketAddress("localhost", 9000), 0)
 
     server.createContext(
       "/",
@@ -26,6 +26,6 @@ object Hello {
     )
 
     server.start()
-    println("Server started on port 8001")
+    println("Server started on port 9000")
   }
 }
